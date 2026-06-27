@@ -10,8 +10,8 @@ function PasswordInput({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="mb-6">
-      <label className="mb-2 block text-sm font-semibold text-gray-700">
+    <div className="mb-5">
+      <label className="mb-1.5 block text-sm font-medium text-gray-700">
         {label}
       </label>
 
@@ -21,13 +21,14 @@ function PasswordInput({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 outline-none transition focus:border-green-600"
+          className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 pr-11 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-700 focus:ring-2 focus:ring-green-100"
         />
 
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+          aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? <FaEyeSlash /> : <FaEye />}
         </button>
