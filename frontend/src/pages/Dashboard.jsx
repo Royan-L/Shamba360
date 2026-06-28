@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   FaBoxes,
   FaChartLine,
@@ -10,16 +9,12 @@ import {
 import AppShell from "../components/AppShell";
 import DataPanel from "../components/DataPanel";
 import StatusBadge from "../components/StatusBadge";
-import api from "../services/api";
 import useAuth from "../hooks/useAuth";
+import useDashboardData from "../hooks/useDashboardData";
 
 function Dashboard() {
-  const [data, setData] = useState(null);
   const { currentUser } = useAuth();
-
-  useEffect(() => {
-    api.get("/dashboard/").then((response) => setData(response.data));
-  }, []);
+  const { data, loading, usingDemoData } = useDashboardData();
 
   const metrics = data?.metrics || {};
   const isManager = currentUser?.role === "manager";
@@ -29,6 +24,12 @@ function Dashboard() {
       title={`${currentUser?.farmName || "Farm"} operations`}
       subtitle="Monitor stock, orders, harvest records, sales, and operator activity."
     >
+      {usingDemoData && (
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          Showing demo farm data because the API is not reachable yet.
+        </div>
+      )}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric icon={<FaBoxes />} label="Inventory items" value={metrics.inventoryItems || 0} helper="Tracked produce lines" />
         <Metric icon={<FaClipboardCheck />} label="Pending orders" value={metrics.pendingOrders || 0} helper="Need manager action" />
@@ -65,6 +66,7 @@ function Dashboard() {
               </tbody>
             </table>
           </div>
+          {loading && <p className="mt-3 text-sm text-gray-500">Refreshing farm data...</p>}
         </DataPanel>
 
         <DataPanel title="Customer Orders" icon={<FaClipboardCheck />}>

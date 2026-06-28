@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
 import { FaClipboardList, FaLeaf, FaShoppingBasket, FaStore } from "react-icons/fa";
 import AppShell from "../components/AppShell";
 import Button from "../components/Button";
 import DataPanel from "../components/DataPanel";
 import StatusBadge from "../components/StatusBadge";
-import api from "../services/api";
 import useAuth from "../hooks/useAuth";
+import useDashboardData from "../hooks/useDashboardData";
 
 function CustomerPortal() {
-  const [data, setData] = useState(null);
   const { currentUser } = useAuth();
-
-  useEffect(() => {
-    api.get("/dashboard/").then((response) => setData(response.data));
-  }, []);
+  const { data, usingDemoData } = useDashboardData();
 
   return (
     <AppShell
@@ -21,6 +16,12 @@ function CustomerPortal() {
       title="Produce marketplace"
       subtitle={`Welcome back${currentUser?.fullName ? `, ${currentUser.fullName}` : ""}. Browse available stock and track orders.`}
     >
+      {usingDemoData && (
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          Showing demo marketplace data until the backend is connected.
+        </div>
+      )}
+
       <section className="grid gap-4 md:grid-cols-3">
         <SummaryCard icon={<FaStore />} label="Available produce" value={data?.inventory?.length || 0} />
         <SummaryCard icon={<FaClipboardList />} label="Open orders" value={data?.orders?.length || 0} />
