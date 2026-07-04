@@ -38,12 +38,12 @@ function Harvests() {
 
   return (
     <AppShell
-      title="Harvests"
-      subtitle="Record what came from each plot, grade it, and move it into stock."
+      title="Crop Yield"
+      subtitle="Record what came from each plot, grade it, and move it into available produce."
     >
       {usingDemoData && (
         <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-          Showing demo harvest records until the backend is connected.
+          Showing demo crop yield records until the backend is connected.
         </div>
       )}
 
@@ -54,14 +54,14 @@ function Harvests() {
       )}
 
       <section className="grid gap-4 md:grid-cols-3">
-        <HarvestStat icon={<FaLeaf />} label="Recorded harvests" value={harvests.length} />
+        <HarvestStat icon={<FaLeaf />} label="Yield records" value={harvests.length} />
         <HarvestStat icon={<FaWarehouse />} label="Total quantity" value={totalQuantity.toLocaleString()} />
         <HarvestStat icon={<FaSeedling />} label="Latest crop" value={latestHarvest?.produce_type || "None"} />
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <DataPanel
-          title="New Harvest"
+          title="New Yield Record"
           icon={<FaPlus />}
         >
           <form onSubmit={saveHarvest}>
@@ -75,16 +75,16 @@ function Harvests() {
             <div className="mt-4 rounded-lg bg-slate-50 p-4">
               <p className="text-sm font-bold text-slate-950">Suggested next step</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Move graded produce into inventory, then reserve quantities for confirmed orders.
+                Move graded produce into the produce register, then reserve quantities for confirmed orders.
               </p>
             </div>
             <div className="mt-4 flex justify-end">
-              <Button className="w-auto px-4" type="submit">Record harvest</Button>
+              <Button className="w-auto px-4" type="submit">Record yield</Button>
             </div>
           </form>
         </DataPanel>
 
-        <DataPanel title="Harvest Log" icon={<FaClipboardCheck />}>
+        <DataPanel title="Yield Log" icon={<FaClipboardCheck />}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">

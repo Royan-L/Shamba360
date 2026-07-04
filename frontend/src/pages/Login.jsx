@@ -72,16 +72,16 @@ function Login({ portal = "staff" }) {
           <h1 className="max-w-lg whitespace-pre-line text-[2.6rem] font-bold leading-[1.15] tracking-tight">
             {isCustomerPortal
               ? "Order produce.\nSee exactly where it stands."
-              : "Every harvest, sale, and order - one workspace."}
+              : "Every crop yield, sale, and order - one workspace."}
           </h1>
           <p className="mt-5 max-w-sm text-[15px] leading-7 text-green-100/75">
             {isCustomerPortal
-              ? "Browse stock, place orders, and track collection without calling the farm office."
-              : "Keep harvests, stock, orders, and sales synchronized for the whole farm team."}
+              ? "Browse produce, place orders, and track collection without calling the farm office."
+              : "Keep crop yield, produce, orders, and sales synchronized for the whole farm team."}
           </p>
 
           <ul className="mt-10 space-y-4">
-            <Feature icon={<FaClipboardList />} text="Clear daily workflows for stock, harvests, orders, and sales" />
+            <Feature icon={<FaClipboardList />} text="Clear daily workflows for produce, crop yield, orders, and sales" />
             <Feature icon={<FaLock />} text="Separate staff and customer access for cleaner operations" />
             <Feature icon={<FaShoppingBasket />} text="Designed for small and medium farms that need fast records" />
           </ul>
@@ -92,16 +92,19 @@ function Login({ portal = "staff" }) {
         </p>
       </aside>
 
-      <main className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-10">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <img
-            src="/public/farm-bg.png.jpg"
-            alt=""
-            className="h-full w-full scale-110 object-cover blur-md"
-          />
-          <div className="absolute inset-0 bg-white/72" />
-          <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-green-50/60 to-white/85" />
-        </div>
+    <main className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-10">
+  {/* Background image */}
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <img
+      src="\public\farm-bg.png.jpg"
+      alt=""
+      className="h-full w-full object-cover scale-110"
+      style={{ filter: "blur(6px) brightness(0.5)" }}
+    />
+    {/* Light overlay — just enough to take the edge off */}
+    <div className="absolute inset-0 bg-white/30" />
+  </div>
+
 
         <div className="relative mb-8 lg:hidden">
           <Logo />

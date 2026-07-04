@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import DataPanel from "../components/DataPanel";
 import StatusBadge from "../components/StatusBadge";
 import useDashboardData from "../hooks/useDashboardData";
+import useMarketplaceData from "../hooks/useMarketplaceData";
 
 const statusTone = {
   pending: "amber",
@@ -14,11 +15,11 @@ const statusTone = {
 
 function Orders() {
   const { data, usingDemoData } = useDashboardData();
-  const orders = data.orders || [];
+  const { orders, inventory } = useMarketplaceData(data);
   const pendingCount = orders.filter((order) => order.status === "pending").length;
   const readyCount = orders.filter((order) => order.status === "ready").length;
   const totalValue = orders.reduce((sum, order) => {
-    const fallbackItem = data.inventory?.find(
+    const fallbackItem = inventory.find(
       (item) => item.produce_type === order.inventory_item__produce_type
     );
     return sum + Number(order.value || Number(order.quantity) * Number(fallbackItem?.unit_price || 0));
@@ -27,7 +28,7 @@ function Orders() {
   return (
     <AppShell
       title="Orders"
-      subtitle="Confirm buyer requests, prepare collections, and keep stock moving."
+      subtitle="Confirm buyer requests, prepare collections, and keep produce moving."
     >
       {usingDemoData && <DemoNotice />}
 

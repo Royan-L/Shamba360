@@ -2,8 +2,11 @@ import {
   FaBoxes,
   FaChartLine,
   FaClipboardCheck,
+  FaComments,
+  FaExclamationTriangle,
   FaFileDownload,
   FaLeaf,
+  FaLightbulb,
   FaUserClock,
 } from "react-icons/fa";
 import AppShell from "../components/AppShell";
@@ -11,18 +14,21 @@ import DataPanel from "../components/DataPanel";
 import StatusBadge from "../components/StatusBadge";
 import useAuth from "../hooks/useAuth";
 import useDashboardData from "../hooks/useDashboardData";
+import useMarketplaceData from "../hooks/useMarketplaceData";
 
 function Dashboard() {
   const { currentUser } = useAuth();
   const { data, loading, usingDemoData } = useDashboardData();
+  const { inventory, orders, feedback } = useMarketplaceData(data);
 
   const metrics = data?.metrics || {};
   const isManager = currentUser?.role === "manager";
+  const urgentProduce = inventory.filter((item) => item.handling_priority === "Urgent" || item.perishability === "High");
 
   return (
     <AppShell
       title={`${currentUser?.farmName || "Farm"} operations`}
-      subtitle="Monitor stock, orders, harvest records, sales, and operator activity."
+      subtitle="Monitor produce, orders, crop yield, sales, and operator activity."
     >
       {usingDemoData && (
         <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
@@ -31,14 +37,14 @@ function Dashboard() {
       )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={<FaBoxes />} label="Inventory items" value={metrics.inventoryItems || 0} helper="Tracked produce lines" />
-        <Metric icon={<FaClipboardCheck />} label="Pending orders" value={metrics.pendingOrders || 0} helper="Need manager action" />
-        <Metric icon={<FaLeaf />} label="Harvest quantity" value={metrics.harvestQuantity || 0} helper="Total recorded units" />
-        <Metric icon={<FaChartLine />} label="Sales records" value={metrics.salesTransactions || 0} helper="Completed entries" />
+        <Metric icon={<FaBoxes />} label="Produce items" value={inventory.length || metrics.inventoryItems || 0} helper="Tracked produce lines" />
+        <Metric icon={<FaClipboardCheck />} label="Pending orders" value={orders.filter((order) => order.status === "pending").length || metrics.pendingOrders || 0} helper="Need manager action" />
+        <Metric icon={<FaLeaf />} label="Crop yield" value={metrics.harvestQuantity || 0} helper="Total recorded units" />
+        <Metric icon={<FaExclamationTriangle />} label="Urgent produce" value={urgentProduce.length} helper="Sell or dispatch first" />
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <DataPanel title="Inventory Status" icon={<FaBoxes />}>
+        <DataPanel title="Produce Status" icon={<FaBoxes />}>
           <div className="overflow-hidden rounded-lg border border-gray-200">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
@@ -50,7 +56,7 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {(data?.inventory || []).map((item) => {
+                {inventory.map((item) => {
                   const lowStock = Number(item.quantity) <= Number(item.low_stock_threshold);
                   return (
                     <tr key={item.id}>
@@ -58,7 +64,9 @@ function Dashboard() {
                       <td className="px-4 py-3 text-gray-600">{item.quantity} {item.unit}</td>
                       <td className="px-4 py-3 text-gray-600">KES {Number(item.unit_price).toLocaleString()}</td>
                       <td className="px-4 py-3">
-                        <StatusBadge tone={lowStock ? "amber" : "green"}>{lowStock ? "Low stock" : "Healthy"}</StatusBadge>
+                        <StatusBadge tone={item.handling_priority === "Urgent" ? "red" : lowStock ? "amber" : "green"}>
+                          {item.handling_priority === "Urgent" ? "Sell first" : lowStock ? "Low supply" : "Healthy"}
+                        </StatusBadge>
                       </td>
                     </tr>
                   );
@@ -71,7 +79,7 @@ function Dashboard() {
 
         <DataPanel title="Customer Orders" icon={<FaClipboardCheck />}>
           <div className="space-y-3">
-            {(data?.orders || []).map((order) => (
+            {orders.map((order) => (
               <Record
                 key={order.reference_code}
                 title={order.reference_code}
@@ -85,7 +93,33 @@ function Dashboard() {
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-3">
-        <DataPanel title="Recent Harvests" icon={<FaLeaf />}>
+        <DataPanel title="Operator Tips" icon={<FaLightbulb />}>
+          <div className="space-y-3">
+            {(data.operatorTips || []).map((tip) => (
+              <Insight key={tip.title} title={tip.title} detail={tip.advice} meta={`${tip.crop} - ${tip.category}`} tone={tip.priority === "High" ? "red" : "amber"} />
+            ))}
+          </div>
+        </DataPanel>
+
+        <DataPanel title="Market Knowledge" icon={<FaChartLine />}>
+          <div className="space-y-3">
+            {(data.marketInsights || []).map((tip) => (
+              <Insight key={tip.produce_type} title={`${tip.produce_type}: ${tip.demand} demand`} detail={tip.signal} meta={tip.action} tone={tip.demand === "High" ? "green" : "blue"} />
+            ))}
+          </div>
+        </DataPanel>
+
+        <DataPanel title="Customer Feedback" icon={<FaComments />}>
+          <div className="space-y-3">
+            {feedback.slice(0, 3).map((item) => (
+              <Insight key={`${item.reference_code}-${item.comment}`} title={`${item.produce_type} - ${item.rating}/5`} detail={item.comment} meta={item.customer_name} tone="green" />
+            ))}
+          </div>
+        </DataPanel>
+      </section>
+
+      <section className="mt-6 grid gap-6 xl:grid-cols-3">
+        <DataPanel title="Recent Yield" icon={<FaLeaf />}>
           <div className="space-y-3">
             {(data?.harvests || []).map((harvest) => (
               <Record
@@ -113,8 +147,8 @@ function Dashboard() {
 
         <DataPanel title="Reports" icon={<FaFileDownload />}>
           <div className="grid gap-3">
-            <ReportButton label="Harvest summary" disabled={!isManager} />
-            <ReportButton label="Inventory status" disabled={!isManager} />
+            <ReportButton label="Crop yield summary" disabled={!isManager} />
+            <ReportButton label="Produce status" disabled={!isManager} />
             <ReportButton label="Sales performance" disabled={!isManager} />
           </div>
           {!isManager && (
@@ -172,6 +206,19 @@ function Record({ title, detail, meta, badge }) {
         {badge && <p className="mt-1 text-xs text-gray-500">{meta}</p>}
       </div>
     </div>
+  );
+}
+
+function Insight({ title, detail, meta, tone }) {
+  return (
+    <article className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-bold text-slate-950">{title}</p>
+        <StatusBadge tone={tone}>{meta?.split(" - ")[0]}</StatusBadge>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+      <p className="mt-3 text-xs font-semibold uppercase text-slate-400">{meta}</p>
+    </article>
   );
 }
 

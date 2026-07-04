@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import ActivityLog, Harvest, InventoryItem, Order, Profile, Sale
+from .models import ActivityLog, Farm, Harvest, InventoryItem, Order, Profile, Sale
 
 
 DEMO_PASSWORD = "Password123!"
@@ -87,10 +87,15 @@ def login(request):
 
 @api_view(["GET"])
 def dashboard_summary(request):
+    farms = list(
+        Farm.objects.select_related("manager")
+        .order_by("name")
+        .values("id", "name", "location", "manager__email")
+    )
     inventory = list(
         InventoryItem.objects.select_related("farm")
         .order_by("produce_type")
-        .values("id", "produce_type", "unit", "quantity", "unit_price", "low_stock_threshold")
+        .values("id", "farm_id", "farm__name", "produce_type", "unit", "quantity", "unit_price", "low_stock_threshold")
     )
     harvests = list(
         Harvest.objects.order_by("-harvest_date")
@@ -125,6 +130,22 @@ def dashboard_summary(request):
             "harvestQuantity": Harvest.objects.aggregate(total=Sum("quantity"))["total"] or 0,
             "salesTransactions": Sale.objects.count(),
         },
+        "farms": [
+            {
+                "id": farm["id"],
+                "name": farm["name"],
+                "manager": farm["manager__email"],
+                "county": farm["location"].split(",")[-1].strip() if "," in farm["location"] else farm["location"],
+                "area": farm["location"].split(",")[0].strip(),
+                "distance_km": 10 + index * 6,
+                "health_status": "Good",
+                "produce_ready_days": 3 + index,
+                "produce": [],
+                "soil_focus": "Review soil nutrients and irrigation records before the next planting cycle.",
+                "market_tip": "Use recent orders to decide which produce to prioritize this week.",
+            }
+            for index, farm in enumerate(farms)
+        ],
         "inventory": inventory,
         "harvests": harvests,
         "sales": sales,

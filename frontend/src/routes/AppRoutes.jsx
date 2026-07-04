@@ -6,6 +6,7 @@ import Inventory from "../pages/Inventory";
 import Harvests from "../pages/Harvests";
 import Orders from "../pages/Orders";
 import Sales from "../pages/Sales";
+import Farms from "../pages/Farms";
 import CustomerPortal from "../pages/CustomerPortal";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -46,6 +47,15 @@ function AppRoutes() {
       />
 
       <Route
+        path="/farms"
+        element={
+          <ProtectedRoute allowedRoles={["manager", "operator"]}>
+            <Farms />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/orders"
         element={
           <ProtectedRoute allowedRoles={["manager", "operator"]}>
@@ -76,4 +86,3 @@ function AppRoutes() {
 }
 
 export default AppRoutes;
-
