@@ -12,9 +12,15 @@ function Sales() {
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState("");
 
+  // When backend data changes, refresh the local ledger.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const salesFromData = data.sales || [];
+
   useEffect(() => {
-    setSales(data.sales || []);
-  }, [data.sales]);
+    setSales(salesFromData);
+  }, [salesFromData]);
+
+
 
   const revenue = sales.reduce(
     (sum, sale) => sum + Number(sale.quantity || 0) * Number(sale.unit_price || 0),

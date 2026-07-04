@@ -5,7 +5,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   const { currentUser } = useAuth();
 
   if (!currentUser) {
-    return <Navigate to="/staff-login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {

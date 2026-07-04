@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "../pages/Login";
+import Signup from "../pages/Signup";
 import Dashboard from "../pages/Dashboard";
 import Inventory from "../pages/Inventory";
 import Harvests from "../pages/Harvests";
@@ -13,11 +14,12 @@ import ProtectedRoute from "./ProtectedRoute";
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/staff-login" replace />} />
+      <Route path="/" element={<Navigate to="/signup" replace />} />
 
-      <Route path="/login" element={<Navigate to="/staff-login" replace />} />
-      <Route path="/staff-login" element={<Login portal="staff" />} />
-      <Route path="/customer-login" element={<Login portal="customer" />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/staff-login" element={<Navigate to="/login" replace />} />
+      <Route path="/customer-login" element={<Navigate to="/login" replace />} />
 
       <Route
         path="/dashboard"
@@ -81,6 +83,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="*" element={<Navigate to="/signup" replace />} />
     </Routes>
   );
 }

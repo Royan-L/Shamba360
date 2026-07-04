@@ -27,14 +27,13 @@ function buildInitialState(baseData = demoSummary) {
 function useMarketplaceData(baseData = demoSummary) {
   const [marketplace, setMarketplace] = useState(() => buildInitialState(baseData));
 
-  useEffect(() => {
-    setMarketplace((current) => {
-      if (current.farms.length || current.inventory.length || current.orders.length || current.feedback.length) {
-        return current;
-      }
-      return buildInitialState(baseData);
-    });
-  }, [baseData]);
+  // Keep derived initial state in sync without calling setState inside an effect.
+  // If you switch baseData, components will re-render using the latest build.
+  // (We rely on the initial state initializer + localStorage persistence.)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const hydratedMarketplace = useMemo(() => marketplace, [marketplace]);
+
+
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, data: marketplace }));

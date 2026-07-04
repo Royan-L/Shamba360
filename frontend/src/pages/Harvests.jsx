@@ -11,9 +11,15 @@ function Harvests() {
   const [harvests, setHarvests] = useState([]);
   const [notice, setNotice] = useState("");
 
+  // When backend data changes, refresh the local log.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const harvestsFromData = data.harvests || [];
+
   useEffect(() => {
-    setHarvests(data.harvests || []);
-  }, [data.harvests]);
+    setHarvests(harvestsFromData);
+  }, [harvestsFromData]);
+
+
 
   const totalQuantity = harvests.reduce((sum, harvest) => sum + Number(harvest.quantity || 0), 0);
   const latestHarvest = harvests[0];

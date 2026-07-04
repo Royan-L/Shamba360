@@ -35,7 +35,7 @@ function AppShell({ children, title, subtitle, portal = "staff" }) {
 
   const handleLogout = () => {
     logout();
-    navigate(portal === "customer" ? "/customer-login" : "/staff-login");
+    navigate("/login");
   };
 
   return (

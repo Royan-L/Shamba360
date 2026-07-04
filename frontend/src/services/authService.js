@@ -2,10 +2,15 @@ import api from "./api";
 
 const USER_KEY = "shamba360_user";
 
-export async function login(email, password, portal) {
-  const response = await api.post("/auth/login/", { email, password, portal });
+export async function login(email, password) {
+  const response = await api.post("/auth/login/", { email, password });
   localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
   return response.data.user;
+}
+
+export async function signup(payload) {
+  const response = await api.post("/auth/signup/", payload);
+  return response.data;
 }
 
 export function getCurrentUser() {

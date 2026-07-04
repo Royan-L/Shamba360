@@ -6,10 +6,14 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
 
-  const login = async (email, password, portal) => {
-    const user = await authService.login(email, password, portal);
+  const login = async (email, password) => {
+    const user = await authService.login(email, password);
     setCurrentUser(user);
     return user;
+  };
+
+  const signup = async (payload) => {
+    return authService.signup(payload);
   };
 
   const logout = () => {
@@ -20,6 +24,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     login,
+    signup,
     logout,
   };
 
