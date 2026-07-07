@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import api from "../services/api";
 import { demoSummary } from "../data/demoData";
 
 const STORAGE_KEY = "shamba360-marketplace";
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 
 function readStoredMarketplace() {
   try {
@@ -19,7 +20,7 @@ function buildInitialState(baseData = demoSummary) {
   return {
     farms: stored?.farms?.length ? stored.farms : baseData.farms || [],
     inventory: stored?.inventory?.length ? stored.inventory : baseData.inventory || [],
-    orders: stored?.orders?.length ? stored.orders : baseData.orders || [],
+    orders: baseData.orders || [],
     feedback: stored?.feedback?.length ? stored.feedback : baseData.feedback || [],
   };
 }
@@ -27,11 +28,14 @@ function buildInitialState(baseData = demoSummary) {
 function useMarketplaceData(baseData = demoSummary) {
   const [marketplace, setMarketplace] = useState(() => buildInitialState(baseData));
 
-  // Keep derived initial state in sync without calling setState inside an effect.
-  // If you switch baseData, components will re-render using the latest build.
-  // (We rely on the initial state initializer + localStorage persistence.)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const hydratedMarketplace = useMemo(() => marketplace, [marketplace]);
+  useEffect(() => {
+    setMarketplace((current) => ({
+      ...current,
+      orders: baseData.orders || [],
+      inventory: baseData.inventory || current.inventory,
+      farms: baseData.farms || current.farms,
+    }));
+  }, [baseData.orders, baseData.inventory, baseData.farms]);
 
 
 
@@ -77,18 +81,21 @@ function useMarketplaceData(baseData = demoSummary) {
     return produce;
   };
 
-  const placeOrder = ({ item, quantity, collectionDate, customerEmail }) => {
+  const placeOrder = async ({ item, quantity, collectionDate, customerEmail }) => {
     const orderQuantity = Number(quantity);
-    const value = orderQuantity * Number(item.unit_price || 0);
-    const order = {
-      reference_code: `ORD-${Date.now().toString().slice(-5)}`,
-      customer__email: customerEmail,
-      farm_name: item.farm_name || "Green Valley Farm",
-      inventory_item__produce_type: item.produce_type,
+    const response = await api.post("/orders/create/", {
+      inventoryItemId: item.id,
       quantity: orderQuantity,
-      collection_date: collectionDate,
-      status: "pending",
-      value,
+      collectionDate,
+      customerEmail,
+    });
+
+    const created = response.data?.order;
+    const order = {
+      ...created,
+      farm_name: created?.farm_name || created?.farm__name || item.farm_name || "Green Valley Farm",
+      quantity: Number(created?.quantity || orderQuantity),
+      value: Number(created?.quantity || orderQuantity) * Number(item.unit_price || 0),
       tracking: ["Order placed", "Awaiting farm confirmation"],
     };
 
@@ -122,6 +129,28 @@ function useMarketplaceData(baseData = demoSummary) {
     return feedback;
   };
 
+  const updateOrderStatus = ({ referenceCode, status, trackingStep }) => {
+    setMarketplace((current) => ({
+      ...current,
+      orders: current.orders.map((order) => {
+        if (order.reference_code !== referenceCode) {
+          return order;
+        }
+
+        const tracking = order.tracking || ["Order placed"];
+        const nextTracking = trackingStep && !tracking.includes(trackingStep)
+          ? [...tracking, trackingStep]
+          : tracking;
+
+        return {
+          ...order,
+          status,
+          tracking: nextTracking,
+        };
+      }),
+    }));
+  };
+
   const customerOrders = useMemo(
     () => (email) => marketplace.orders.filter((order) => order.customer__email === email),
     [marketplace.orders]
@@ -133,6 +162,7 @@ function useMarketplaceData(baseData = demoSummary) {
     addProduce,
     placeOrder,
     addFeedback,
+    updateOrderStatus,
     customerOrders,
   };
 }

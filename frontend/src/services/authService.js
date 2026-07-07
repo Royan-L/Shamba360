@@ -18,6 +18,10 @@ export function getCurrentUser() {
   return storedUser ? JSON.parse(storedUser) : null;
 }
 
+export function setCurrentUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function logout() {
   localStorage.removeItem(USER_KEY);
 }

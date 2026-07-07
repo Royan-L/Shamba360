@@ -7,9 +7,11 @@ import StatusBadge from "../components/StatusBadge";
 import useAuth from "../hooks/useAuth";
 import useDashboardData from "../hooks/useDashboardData";
 import useMarketplaceData from "../hooks/useMarketplaceData";
+import api from "../services/api";
 
 const statusTone = {
   pending: "amber",
+  approved: "green",
   confirmed: "blue",
   ready: "green",
   collected: "gray",
@@ -22,34 +24,42 @@ const healthTone = {
   Critical: "red",
 };
 
-function CustomerPortal() {
-  const { currentUser } = useAuth();
+function CustomerPortal({ section = "marketplace" }) {
+  const { currentUser, updateCurrentUser } = useAuth();
   const { data, usingDemoData } = useDashboardData();
   const { farms, inventory, feedback, placeOrder, addFeedback, customerOrders } = useMarketplaceData(data);
   const [selectedItem, setSelectedItem] = useState(null);
   const [feedbackOrder, setFeedbackOrder] = useState(null);
   const [notice, setNotice] = useState("");
+  const [phone, setPhone] = useState(currentUser?.phone || "");
+  const [smsOptIn, setSmsOptIn] = useState(Boolean(currentUser?.smsOptIn));
+  const [savingNotifications, setSavingNotifications] = useState(false);
 
   const myOrders = customerOrders(currentUser?.email || "customer@shamba360.test");
+  const isOrdersSection = section === "orders";
   const nearbyFarms = useMemo(
     () => [...farms].sort((a, b) => Number(a.distance_km) - Number(b.distance_km)),
     [farms]
   );
 
-  const submitOrder = (event) => {
+  const submitOrder = async (event) => {
     event.preventDefault();
     if (!selectedItem) return;
 
     const form = new FormData(event.currentTarget);
-    const order = placeOrder({
-      item: selectedItem,
-      quantity: form.get("quantity"),
-      collectionDate: form.get("collection_date"),
-      customerEmail: currentUser?.email || "customer@shamba360.test",
-    });
+    try {
+      const order = await placeOrder({
+        item: selectedItem,
+        quantity: form.get("quantity"),
+        collectionDate: form.get("collection_date"),
+        customerEmail: currentUser?.email || "customer@shamba360.test",
+      });
 
-    setNotice(`${order.reference_code} was placed for ${order.quantity} ${selectedItem.unit} of ${selectedItem.produce_type}.`);
-    setSelectedItem(null);
+      setNotice(`${order.reference_code} was placed for ${order.quantity} ${selectedItem.unit} of ${selectedItem.produce_type}.`);
+      setSelectedItem(null);
+    } catch (error) {
+      setNotice(error.response?.data?.detail || "Could not place order. Please try again.");
+    }
   };
 
   const submitFeedback = (event) => {
@@ -66,12 +76,60 @@ function CustomerPortal() {
     setFeedbackOrder(null);
   };
 
+  const saveNotifications = async (event) => {
+    event.preventDefault();
+    if (!currentUser?.email) {
+      setNotice("Please sign in again before updating notification settings.");
+      return;
+    }
+
+    setSavingNotifications(true);
+    try {
+      const response = await api.post("/auth/profile/notifications/", {
+        email: currentUser.email,
+        phone,
+        smsOptIn,
+      });
+      const updatedUser = response.data?.user;
+      if (updatedUser) {
+        updateCurrentUser({ phone: updatedUser.phone, smsOptIn: updatedUser.smsOptIn });
+      }
+      setNotice("Notification preferences saved. Approved orders will include an email receipt.");
+    } catch (error) {
+      setNotice(error.response?.data?.detail || "Could not save notification preferences.");
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
   return (
     <AppShell
       portal="customer"
-      title="Produce marketplace"
-      subtitle={`Welcome back${currentUser?.fullName ? `, ${currentUser.fullName}` : ""}. Browse available produce and track orders.`}
+      title={isOrdersSection ? "Buyers Portal - Orders" : "Buyers Portal"}
+      subtitle={
+        isOrdersSection
+          ? `Track approvals, pickup readiness, and feedback${currentUser?.fullName ? ` for ${currentUser.fullName}` : ""}.`
+          : `Welcome back${currentUser?.fullName ? `, ${currentUser.fullName}` : ""}. Browse produce and place orders.`
+      }
     >
+      <div className="mb-6 overflow-hidden rounded-xl border border-white/70 bg-white/70 shadow-[0_16px_38px_rgba(15,23,42,0.09)] backdrop-blur-sm">
+        <div className="relative">
+          <img
+            src="/farm-bg.png.jpg"
+            alt=""
+            className="h-36 w-full object-cover sm:h-44"
+            style={{ filter: "blur(2px) brightness(0.6)" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/65 via-slate-900/45 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-200">Shamba360</p>
+            <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
+              {isOrdersSection ? "Track approval, ready-for-pickup, and collection status" : "Shop fresh produce from trusted local farms"}
+            </h2>
+          </div>
+        </div>
+      </div>
+
       {usingDemoData && (
         <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
           Showing demo marketplace data until the backend is connected.
@@ -84,10 +142,11 @@ function CustomerPortal() {
         </div>
       )}
 
-      <section className="mb-6 rounded-lg border border-green-200/80 bg-white/90 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      {!isOrdersSection && (
+      <section className="mb-6 rounded-lg border border-violet-200/70 bg-white/90 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-green-700">Nearby small-farm marketplace</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-violet-700">Nearby small-farm marketplace</p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">Buy produce with freshness, risk, and farm visibility.</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Prioritize durable produce for regular supply, and move urgent perishables quickly when demand is high.
@@ -100,6 +159,7 @@ function CustomerPortal() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="grid gap-4 md:grid-cols-3">
         <SummaryCard icon={<FaStore />} label="Available produce" value={inventory.length} />
@@ -107,6 +167,41 @@ function CustomerPortal() {
         <SummaryCard icon={<FaMapMarkerAlt />} label="Nearby farms" value={nearbyFarms.length} />
       </section>
 
+      <section className="mt-6">
+        <DataPanel title="Profile & Email Alerts" icon={<FaClipboardCheck />}>
+          <form onSubmit={saveNotifications} className="grid gap-4 md:grid-cols-[1fr_auto]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-gray-700">Phone number</span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="07XXXXXXXX or +2547XXXXXXXX"
+                  className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                />
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={smsOptIn}
+                  onChange={(event) => setSmsOptIn(event.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-700"
+                />
+                Enable approval and pickup email alerts
+              </label>
+            </div>
+
+            <div className="flex items-end">
+              <Button type="submit" className="min-h-10" disabled={savingNotifications}>
+                {savingNotifications ? "Saving..." : "Save notifications"}
+              </Button>
+            </div>
+          </form>
+        </DataPanel>
+      </section>
+
+      {!isOrdersSection && (
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <DataPanel title="Available Produce" icon={<FaStore />}>
           <div className="grid gap-4 md:grid-cols-2">
@@ -208,6 +303,7 @@ function CustomerPortal() {
           )}
         </DataPanel>
       </section>
+      )}
 
       <section className="mt-6">
         <DataPanel
@@ -245,6 +341,28 @@ function CustomerPortal() {
                 <p className="mt-3 text-xs font-medium text-gray-500">
                   Collection: {order.collection_date}
                 </p>
+                {order.status === "ready" && (
+                  <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900">
+                    <p className="font-semibold">Payment details</p>
+                    <p className="mt-1">{order.farm_mpesa_label || "M-Pesa details will be shared by the farm."}</p>
+                    {order.farm_mpesa_account_reference && (
+                      <p className="mt-1">Reference: {order.farm_mpesa_account_reference}</p>
+                    )}
+                    {order.farm_mpesa_account_name && (
+                      <p className="mt-1">Account name: {order.farm_mpesa_account_name}</p>
+                    )}
+                  </div>
+                )}
+                {order.status !== "pending" && (
+                  <a
+                    href={`${import.meta.env.VITE_API_BASE_URL}/orders/${order.reference_code}/receipt/`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg border border-violet-200 px-3 text-sm font-semibold text-violet-800 hover:bg-violet-50"
+                  >
+                    Download order slip
+                  </a>
+                )}
                 <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
                   {(order.tracking || ["Order placed"]).map((step) => (
                     <div key={step} className="flex items-center gap-2 text-sm text-gray-600">
@@ -267,6 +385,7 @@ function CustomerPortal() {
         </DataPanel>
       </section>
 
+      {!isOrdersSection && (
       <section className="mt-6">
         <DataPanel title="Recent Customer Feedback" icon={<FaRegStar />}>
           <div className="grid gap-4 md:grid-cols-2">
@@ -283,6 +402,7 @@ function CustomerPortal() {
           </div>
         </DataPanel>
       </section>
+      )}
     </AppShell>
   );
 }

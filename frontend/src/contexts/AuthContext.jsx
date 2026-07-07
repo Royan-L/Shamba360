@@ -16,6 +16,15 @@ export function AuthProvider({ children }) {
     return authService.signup(payload);
   };
 
+  const updateCurrentUser = (patch) => {
+    setCurrentUser((previous) => {
+      if (!previous) return previous;
+      const updated = { ...previous, ...patch };
+      authService.setCurrentUser(updated);
+      return updated;
+    });
+  };
+
   const logout = () => {
     authService.logout();
     setCurrentUser(null);
@@ -25,6 +34,7 @@ export function AuthProvider({ children }) {
     currentUser,
     login,
     signup,
+    updateCurrentUser,
     logout,
   };
 

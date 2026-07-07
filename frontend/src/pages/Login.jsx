@@ -6,14 +6,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import Logo from "../components/Logo";
 import PasswordInput from "../components/PasswordInput";
-import StatusBadge from "../components/StatusBadge";
 import useAuth from "../hooks/useAuth";
-
-const DEMO_USERS = [
-  { label: "Manager", email: "manager@shamba360.test", role: "manager", badge: "Full access" },
-  { label: "Operator", email: "operator@shamba360.test", role: "operator", badge: "Daily entries" },
-  { label: "Customer", email: "customer@shamba360.test", role: "customer", badge: "Orders" },
-];
 
 function Login() {
   const [email, setEmail] = useState("manager@shamba360.test");
@@ -30,17 +23,12 @@ function Login() {
 
     try {
       const user = await login(email, password);
-      navigate(user.role === "customer" ? "/customer" : "/dashboard");
+      navigate(user.role === "customer" ? "/buyers" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "That email or password doesn't match our records.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemoUser = (demoEmail) => {
-    setEmail(demoEmail);
-    setPassword("Password123!");
   };
 
   return (
@@ -56,16 +44,16 @@ function Login() {
         <div className="relative">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300">Welcome back</p>
           <h1 className="max-w-lg whitespace-pre-line text-[2.6rem] font-bold leading-[1.15] tracking-tight">
-            {"Track farm operations, sales, and orders in one place."}
+            {"One platform for managers, operators, and buyers."}
           </h1>
           <p className="mt-5 max-w-sm text-[15px] leading-7 text-green-100/75">
-            Sign in with your account to continue managing produce workflows or placing customer orders.
+            Sign in to continue your workflow: manage farms, process orders, or track buyer collections.
           </p>
 
           <ul className="mt-10 space-y-4">
-            <Feature icon={<FaClipboardList />} text="Keep produce, crop yield, and orders in sync" />
-            <Feature icon={<FaLock />} text="Role-based access for manager, operator, and customer" />
-            <Feature icon={<FaShoppingBasket />} text="Simple workflows built for growing farms" />
+            <Feature icon={<FaClipboardList />} text="Keep produce, harvest, sales, and orders in sync" />
+            <Feature icon={<FaLock />} text="Role-based access with farm-specific operator actions" />
+            <Feature icon={<FaShoppingBasket />} text="Buyer experience from order placement to pickup" />
           </ul>
         </div>
 
@@ -135,29 +123,6 @@ function Login() {
               <Button onClick={handleLogin} disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
-            </div>
-          </div>
-
-          <div className="mt-8 border-t border-stone-200/70 pt-6">
-            <div className="mb-3.5 flex items-center justify-between gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Try a demo profile</p>
-              <span className="rounded-md bg-stone-100 px-2 py-0.5 font-mono text-[11px] text-stone-500">Password123!</span>
-            </div>
-            <div className="space-y-2.5">
-              {DEMO_USERS.map((user) => (
-                <button
-                  key={user.email}
-                  type="button"
-                  onClick={() => fillDemoUser(user.email)}
-                  className="group flex w-full items-center justify-between gap-3 rounded-xl border border-stone-200/80 bg-white/65 px-4 py-3.5 text-left text-sm transition hover:border-green-500 hover:bg-green-50/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
-                >
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-stone-900 group-hover:text-green-900">{user.label}</span>
-                    <span className="mt-0.5 block truncate text-xs text-stone-400">{user.email}</span>
-                  </span>
-                  <StatusBadge tone={user.role === "manager" ? "green" : "gray"}>{user.badge}</StatusBadge>
-                </button>
-              ))}
             </div>
           </div>
         </div>

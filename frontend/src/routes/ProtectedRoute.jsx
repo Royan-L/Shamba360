@@ -9,7 +9,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
-    const fallback = currentUser.role === "customer" ? "/customer" : "/dashboard";
+    const fallback = currentUser.role === "customer" ? "/buyers" : "/dashboard";
     return <Navigate to={fallback} replace />;
   }
 

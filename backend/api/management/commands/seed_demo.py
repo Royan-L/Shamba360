@@ -31,8 +31,16 @@ class Command(BaseCommand):
             defaults={
                 "location": "Kiambu County, Kenya",
                 "manager": manager,
+                "mpesa_method": Farm.MPESA_PAYBILL,
+                "mpesa_number": "522522",
+                "mpesa_account_name": "Shamba360 Green Valley",
             },
         )
+
+        farm.mpesa_method = Farm.MPESA_PAYBILL
+        farm.mpesa_number = "522522"
+        farm.mpesa_account_name = "Shamba360 Green Valley"
+        farm.save(update_fields=["mpesa_method", "mpesa_number", "mpesa_account_name"])
 
         Profile.objects.update_or_create(
             user=manager,

@@ -76,13 +76,24 @@ function AppRoutes() {
       />
 
       <Route
-        path="/customer"
+        path="/buyers"
         element={
           <ProtectedRoute allowedRoles={["customer"]}>
-            <CustomerPortal />
+            <CustomerPortal section="marketplace" />
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/buyers/orders"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerPortal section="orders" />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="/customer" element={<Navigate to="/buyers" replace />} />
 
       <Route path="*" element={<Navigate to="/signup" replace />} />
     </Routes>

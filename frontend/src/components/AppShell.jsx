@@ -24,8 +24,8 @@ const staffNav = [
 
 
 const customerNav = [
-  { label: "Marketplace", to: "/customer", icon: <FaStore /> },
-  { label: "Orders", to: "/customer", icon: <FaClipboardList /> },
+  { label: "Marketplace", to: "/buyers", icon: <FaStore /> },
+  { label: "Orders", to: "/buyers/orders", icon: <FaClipboardList /> },
 ];
 
 function AppShell({ children, title, subtitle, portal = "staff" }) {
@@ -45,24 +45,30 @@ function AppShell({ children, title, subtitle, portal = "staff" }) {
           <Logo />
         </div>
 
-        <div className="mt-6 rounded-lg border border-white/10 bg-white/8 p-4">
-          <p className="text-xs font-semibold uppercase text-green-200">Workspace</p>
-          <p className="mt-1 truncate text-sm font-bold text-white">
-            {currentUser?.farmName || "Green Valley Farm"}
-          </p>
-          <p className="mt-1 text-xs text-slate-300">{currentUser?.role || portal}</p>
-        </div>
+        {portal !== "customer" && (
+          <div className="mt-6 rounded-lg border border-white/10 bg-white/8 p-4">
+            <p className="text-xs font-semibold uppercase text-green-200">Workspace</p>
+            <p className="mt-1 truncate text-sm font-bold text-white">
+              {currentUser?.farmName || "Green Valley Farm"}
+            </p>
+            <p className="mt-1 text-xs text-slate-300">{currentUser?.role || portal}</p>
+          </div>
+        )}
 
         <nav className="mt-6 space-y-1.5">
           {navItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-semibold transition ${
-                  isActive ? "bg-green-500 text-slate-950 shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"
-                }`
-              }
+              className={({ isActive }) => {
+                const activeStyles = portal === "customer"
+                  ? "bg-violet-100 text-violet-900 shadow-sm"
+                  : "bg-green-500 text-slate-950 shadow-sm";
+
+                return `flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-semibold transition ${
+                  isActive ? activeStyles : "text-slate-300 hover:bg-white/10 hover:text-white"
+                }`;
+              }}
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/12 text-base">
                 {item.icon}
@@ -72,12 +78,14 @@ function AppShell({ children, title, subtitle, portal = "staff" }) {
           ))}
         </nav>
 
-        <div className="mt-auto rounded-lg border border-green-300/20 bg-green-400/10 p-4">
-          <p className="text-sm font-bold text-green-100">Today on the farm</p>
-          <p className="mt-1 text-xs leading-5 text-green-50/80">
-            Clear urgent perishables, confirm paid orders, then update produce availability.
-          </p>
-        </div>
+        {portal !== "customer" && (
+          <div className="mt-auto rounded-lg border border-green-300/20 bg-green-400/10 p-4">
+            <p className="text-sm font-bold text-green-100">Today on the farm</p>
+            <p className="mt-1 text-xs leading-5 text-green-50/80">
+              Clear urgent perishables, confirm paid orders, then update produce availability.
+            </p>
+          </div>
+        )}
       </aside>
 
       <div className="min-w-0 pb-20 lg:pb-0">
@@ -125,11 +133,15 @@ function AppShell({ children, title, subtitle, portal = "staff" }) {
           <NavLink
             key={item.label}
             to={item.to}
-            className={({ isActive }) =>
-              `flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold ${
-                isActive ? "bg-green-50 text-green-800" : "text-slate-500"
-              }`
-            }
+            className={({ isActive }) => {
+              const activeStyles = portal === "customer"
+                ? "bg-violet-50 text-violet-800"
+                : "bg-green-50 text-green-800";
+
+              return `flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold ${
+                isActive ? activeStyles : "text-slate-500"
+              }`;
+            }}
           >
             <span className="text-base">{item.icon}</span>
             {item.label}

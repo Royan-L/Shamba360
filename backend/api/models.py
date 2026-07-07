@@ -3,8 +3,19 @@ from django.db import models
 
 
 class Farm(models.Model):
+    MPESA_PAYBILL = "paybill"
+    MPESA_BUY_GOODS = "buygoods"
+
+    MPESA_METHOD_CHOICES = [
+        (MPESA_PAYBILL, "Paybill"),
+        (MPESA_BUY_GOODS, "Buy Goods"),
+    ]
+
     name = models.CharField(max_length=120)
     location = models.CharField(max_length=180)
+    mpesa_method = models.CharField(max_length=20, choices=MPESA_METHOD_CHOICES, default=MPESA_PAYBILL)
+    mpesa_number = models.CharField(max_length=30, blank=True)
+    mpesa_account_name = models.CharField(max_length=80, blank=True)
     manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -38,6 +49,7 @@ class Profile(models.Model):
         related_name="profiles",
     )
     phone = models.CharField(max_length=30, blank=True)
+    sms_opt_in = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -90,12 +102,14 @@ class Sale(models.Model):
 class Order(models.Model):
     STATUS_PENDING = "pending"
     STATUS_APPROVED = "approved"
+    STATUS_READY = "ready"
     STATUS_REJECTED = "rejected"
     STATUS_COLLECTED = "collected"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_APPROVED, "Approved"),
+        (STATUS_READY, "Ready for Pickup"),
         (STATUS_REJECTED, "Rejected"),
         (STATUS_COLLECTED, "Collected"),
     ]

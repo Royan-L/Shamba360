@@ -1,23 +1,30 @@
+import { useState } from "react";
 import { FaCalendarDay, FaCheck, FaClipboardList, FaTruckLoading } from "react-icons/fa";
 import AppShell from "../components/AppShell";
 import Button from "../components/Button";
 import DataPanel from "../components/DataPanel";
 import StatusBadge from "../components/StatusBadge";
+import api from "../services/api";
 import useDashboardData from "../hooks/useDashboardData";
+import useAuth from "../hooks/useAuth";
 import useMarketplaceData from "../hooks/useMarketplaceData";
 
 const statusTone = {
   pending: "amber",
+  approved: "green",
+  ready: "blue",
   confirmed: "blue",
-  ready: "green",
   collected: "gray",
 };
 
 function Orders() {
+  const { currentUser } = useAuth();
   const { data, usingDemoData } = useDashboardData();
-  const { orders, inventory } = useMarketplaceData(data);
+  const { orders, inventory, updateOrderStatus } = useMarketplaceData(data);
+  const readyCount = orders.filter((order) => ["ready", "approved"].includes(order.status)).length;
+  const [notice, setNotice] = useState("");
+  const [orderActionFeedback, setOrderActionFeedback] = useState({});
   const pendingCount = orders.filter((order) => order.status === "pending").length;
-  const readyCount = orders.filter((order) => order.status === "ready").length;
   const totalValue = orders.reduce((sum, order) => {
     const fallbackItem = inventory.find(
       (item) => item.produce_type === order.inventory_item__produce_type
@@ -25,12 +32,82 @@ function Orders() {
     return sum + Number(order.value || Number(order.quantity) * Number(fallbackItem?.unit_price || 0));
   }, 0);
 
+  const approveOrder = async (order) => {
+    try {
+      const response = await api.post(`/orders/${order.reference_code}/approve/`, {
+        approverEmail: currentUser?.email,
+      });
+      updateOrderStatus({
+        referenceCode: order.reference_code,
+        status: "ready",
+        trackingStep: "Approved and ready for pickup",
+      });
+
+      const email = response.data?.email;
+      if (email?.sent) {
+        setNotice(`Order ${order.reference_code} is ready for pickup. Email receipt sent to buyer.`);
+        setOrderActionFeedback((previous) => ({
+          ...previous,
+          [order.reference_code]: "Ready for pickup. Email receipt sent to buyer.",
+        }));
+      } else {
+        const reason = email?.reason || "unknown error.";
+        setNotice(`Order ${order.reference_code} is ready for pickup. Email not sent: ${reason}`);
+        setOrderActionFeedback((previous) => ({
+          ...previous,
+          [order.reference_code]: `Ready for pickup, but email failed: ${reason}`,
+        }));
+      }
+    } catch (error) {
+      const reason = error.response?.data?.detail || `Failed to approve ${order.reference_code}.`;
+      setNotice(reason);
+      setOrderActionFeedback((previous) => ({
+        ...previous,
+        [order.reference_code]: reason,
+      }));
+    }
+  };
+
+  const dispatchOrder = async (order) => {
+    try {
+      await api.post(`/orders/${order.reference_code}/dispatch/`, {
+        approverEmail: currentUser?.email,
+        confirmCollected: true,
+      });
+
+      updateOrderStatus({
+        referenceCode: order.reference_code,
+        status: "collected",
+        trackingStep: "Dispatched for pickup",
+      });
+
+      setNotice(`Order ${order.reference_code} dispatched successfully.`);
+      setOrderActionFeedback((previous) => ({
+        ...previous,
+        [order.reference_code]: "Order dispatched and marked as collected.",
+      }));
+    } catch (error) {
+      const reason = error.response?.data?.detail || `Failed to dispatch ${order.reference_code}.`;
+      setNotice(reason);
+      setOrderActionFeedback((previous) => ({
+        ...previous,
+        [order.reference_code]: reason,
+      }));
+    }
+  };
+
   return (
     <AppShell
       title="Orders"
       subtitle="Confirm buyer requests, prepare collections, and keep produce moving."
     >
       {usingDemoData && <DemoNotice />}
+
+      {notice && (
+        <div className="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-900">
+          {notice}
+        </div>
+      )}
 
       <section className="grid gap-4 md:grid-cols-3">
         <QuickStat icon={<FaClipboardList />} label="Open orders" value={orders.length} />
@@ -69,12 +146,30 @@ function Orders() {
                       <StatusBadge tone={statusTone[order.status] || "gray"}>{order.status}</StatusBadge>
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-200 px-3 text-sm font-semibold text-green-800 hover:bg-green-50"
-                      >
-                        <FaCheck /> Update
-                      </button>
+                      {order.status === "pending" ? (
+                        <button
+                          type="button"
+                          onClick={() => approveOrder(order)}
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-green-200 px-3 text-sm font-semibold text-green-800 hover:bg-green-50"
+                        >
+                          <FaCheck /> Approve
+                        </button>
+                      ) : ["approved", "ready"].includes(order.status) ? (
+                        <button
+                          type="button"
+                          onClick={() => dispatchOrder(order)}
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-violet-200 px-3 text-sm font-semibold text-violet-800 hover:bg-violet-50"
+                        >
+                          <FaTruckLoading /> Mark collected
+                        </button>
+                      ) : (
+                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">No action</span>
+                      )}
+                      {orderActionFeedback[order.reference_code] && (
+                        <p className="mt-2 max-w-[240px] text-xs font-medium text-slate-500">
+                          {orderActionFeedback[order.reference_code]}
+                        </p>
+                      )}
                     </td>
                   </tr>
                 ))}
